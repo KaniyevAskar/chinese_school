@@ -26,7 +26,7 @@ export function Hero() {
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-porcelain" />
         <div className="absolute -right-40 -top-24 h-[520px] w-[520px] rounded-full bg-cinnabar/5 blur-[2px]" />
-        <ScalePattern className="absolute right-[-6%] top-[12%] h-[460px] w-[460px] text-cinnabar/25" />
+        <ScalePattern className="absolute right-[-6%] top-[12%] h-[460px] w-[460px] text-cinnabar opacity-[0.22]" />
         <div className="paper-grain absolute inset-0 opacity-[0.4] mix-blend-multiply" />
       </div>
 
@@ -125,7 +125,7 @@ export function Hero() {
           className="relative mx-auto w-full max-w-md"
         >
           <div className="relative aspect-[4/5] overflow-hidden rounded-lg border border-ink/10 bg-gradient-to-b from-white to-porcelain-deep shadow-lift">
-            <ScalePattern className="absolute inset-0 h-full w-full text-cinnabar/15" />
+            <ScalePattern className="absolute inset-0 h-full w-full text-cinnabar opacity-[0.15]" />
             {/* Vertical Chinese banner */}
             <div className="absolute right-6 top-6 flex flex-col items-center gap-1 font-han text-2xl font-700 leading-tight text-cinnabar/85">
               <span>学</span>

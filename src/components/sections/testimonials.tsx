@@ -1,6 +1,14 @@
-import { Quote, Star } from 'lucide-react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight, Quote, Star } from 'lucide-react'
+import {
+  animate,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  type PanInfo,
+} from 'framer-motion'
 import { SectionHeading } from '@/components/ui/section-heading'
-import { RevealGroup, RevealItem } from '@/components/ui/reveal'
+import { Reveal } from '@/components/ui/reveal'
 import { cn } from '@/lib/utils'
 
 const testimonials = [
@@ -46,7 +54,7 @@ const testimonials = [
     text: '您好Tomiris老师👋\
     Спасибо большое за Ваш труд и терпение! За знание, которое Вы мне даете🥹 С Вами всегда весело и приятно заниматься \
     谢谢 за все! Я настроена. \
-    вместе с Вами достичь HSK4, а ещё лучше HSK6！'
+    вместе с Вами достичь HSK4, а ещё лучше HSK6！',
   },
   {
     name: 'Анастасия',
@@ -55,11 +63,70 @@ const testimonials = [
     text: '你好，老师！\
     Мне очень нравится с Вами заниматься китайским языком. Вы доходчиво объясняете и выполняете свою работу безупречно. Буду советовать Вас людям, которые так же хотели бы изучать китайский язык. \
     Я рада, что встретила Вас и именно Вы мой учитель. \
-    Желаю Вам терпения, что очень нужно и старательных учеников'
+    Желаю Вам терпения, что очень нужно и старательных учеников',
   },
 ]
 
+const total = testimonials.length
+
+const SPRING = { type: 'spring' as const, stiffness: 320, damping: 36, mass: 0.9 }
+
 export function Testimonials() {
+  const [index, setIndex] = useState(0)
+  const reduce = useReducedMotion()
+
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const x = useMotionValue(0)
+  const [viewportWidth, setViewportWidth] = useState(0)
+
+  useLayoutEffect(() => {
+    const el = viewportRef.current
+    if (!el) return
+    const update = () => setViewportWidth(el.offsetWidth)
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const target = -index * viewportWidth
+    if (reduce || viewportWidth === 0) {
+      x.set(target)
+      return
+    }
+    const controls = animate(x, target, SPRING)
+    return controls.stop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, viewportWidth, reduce])
+
+  const goTo = (i: number) => setIndex(Math.max(0, Math.min(total - 1, i)))
+  const prev = () => goTo(index - 1)
+  const next = () => goTo(index + 1)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') prev()
+      if (e.key === 'ArrowRight') next()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index])
+
+  const onDragEnd = (_: unknown, info: PanInfo) => {
+    const projection = info.offset.x + info.velocity.x * 0.18
+    const threshold = Math.max(viewportWidth * 0.2, 48)
+
+    if (projection < -threshold && index < total - 1) {
+      goTo(index + 1)
+    } else if (projection > threshold && index > 0) {
+      goTo(index - 1)
+    } else {
+      animate(x, -index * viewportWidth, SPRING)
+    }
+  }
+
   return (
     <section id="testimonials" className="relative bg-porcelain-deep py-24 sm:py-28">
       <div className="container-px">
@@ -70,36 +137,118 @@ export function Testimonials() {
           description="Честные истории людей, которые начинали с нуля — школьников, профессионалов и родителей."
         />
 
-        <RevealGroup className="mt-14 grid gap-6 lg:grid-cols-3">
-          {testimonials.map((t) => (
-            <RevealItem key={t.name} className="h-full">
-              <figure className="flex h-full flex-col rounded-lg border border-ink/10 bg-white/70 p-8 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-lift">
-                <Quote className="h-8 w-8 text-cinnabar/30" strokeWidth={1.5} />
-                <blockquote className="mt-4 flex-1 text-pretty text-[0.97rem] leading-relaxed text-ink-soft">
-                  {t.text}
-                </blockquote>
-                <div className="mt-6 flex items-center gap-1 text-gold-deep" aria-label="Оценка 5 из 5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-current" />
-                  ))}
-                </div>
-                <figcaption className="mt-5 flex items-center gap-3 border-t border-ink/10 pt-5">
-                  <span
-                    className={cn(
-                      'flex h-11 w-11 items-center justify-center rounded-md bg-cinnabar font-sans text-sm font-700 text-porcelain',
-                    )}
+        <Reveal className="mx-auto mt-14 max-w-3xl">
+          <div
+            className="relative"
+            role="region"
+            aria-roledescription="Карусель отзывов"
+            aria-label="Отзывы студентов"
+          >
+            <div ref={viewportRef} className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-soft">
+              <motion.div
+                className="flex touch-pan-y will-change-transform"
+                style={{ x }}
+                drag="x"
+                dragConstraints={{
+                  left: -((total - 1) * viewportWidth),
+                  right: 0,
+                }}
+                dragElastic={0.12}
+                dragMomentum={false}
+                onDragEnd={onDragEnd}
+              >
+                {testimonials.map((t, i) => (
+                  <figure
+                    key={t.name}
+                    className="flex w-full shrink-0 flex-col bg-white p-7 sm:p-10"
+                    aria-roledescription="slide"
+                    aria-label={`${i + 1} из ${total}`}
+                    aria-hidden={i !== index}
                   >
-                    {t.initials}
-                  </span>
-                  <span>
-                    <span className="block font-display text-lg font-600 leading-tight text-ink">{t.name}</span>
-                    <span className="block text-xs text-ink-muted">{t.role}</span>
-                  </span>
-                </figcaption>
-              </figure>
-            </RevealItem>
-          ))}
-        </RevealGroup>
+                    <Quote className="h-9 w-9 text-cinnabar/30" strokeWidth={1.5} />
+                    <blockquote className="mt-5 flex-1 text-pretty text-[1rem] leading-relaxed text-ink-soft sm:text-[1.06rem]">
+                      {t.text}
+                    </blockquote>
+                    <div className="mt-7 flex items-center gap-1 text-gold-deep" aria-label="Оценка 5 из 5">
+                      {Array.from({ length: 5 }).map((_, s) => (
+                        <Star key={s} className="h-4 w-4 fill-current" />
+                      ))}
+                    </div>
+                    <figcaption className="mt-5 flex items-center gap-3 border-t border-ink/10 pt-5">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-md bg-cinnabar font-sans text-sm font-700 text-porcelain">
+                        {t.initials}
+                      </span>
+                      <span>
+                        <span className="block font-display text-lg font-600 leading-tight text-ink">{t.name}</span>
+                        <span className="block text-xs text-ink-muted">{t.role}</span>
+                      </span>
+                    </figcaption>
+                  </figure>
+                ))}
+              </motion.div>
+            </div>
+
+            {/* Side arrows — only on lg+ where there's safe room outside the slide */}
+            <button
+              type="button"
+              onClick={prev}
+              disabled={index === 0}
+              aria-label="Предыдущий отзыв"
+              className="absolute -left-16 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-ink/15 bg-porcelain text-ink-soft shadow-soft transition-colors hover:border-cinnabar/50 hover:text-cinnabar-deep disabled:cursor-not-allowed disabled:opacity-40 lg:flex"
+            >
+              <ChevronLeft className="h-5 w-5" strokeWidth={1.7} />
+            </button>
+            <button
+              type="button"
+              onClick={next}
+              disabled={index === total - 1}
+              aria-label="Следующий отзыв"
+              className="absolute -right-16 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-ink/15 bg-porcelain text-ink-soft shadow-soft transition-colors hover:border-cinnabar/50 hover:text-cinnabar-deep disabled:cursor-not-allowed disabled:opacity-40 lg:flex"
+            >
+              <ChevronRight className="h-5 w-5" strokeWidth={1.7} />
+            </button>
+          </div>
+
+          {/* Controls row: arrows on mobile/tablet + dot indicators */}
+          <div className="mt-7 flex items-center justify-center gap-3 sm:mt-8 sm:gap-4">
+            <button
+              type="button"
+              onClick={prev}
+              disabled={index === 0}
+              aria-label="Предыдущий отзыв"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 bg-porcelain text-ink-soft transition-colors hover:border-cinnabar/50 hover:text-cinnabar-deep disabled:cursor-not-allowed disabled:opacity-40 lg:hidden"
+            >
+              <ChevronLeft className="h-5 w-5" strokeWidth={1.7} />
+            </button>
+
+            <div className="flex items-center gap-2.5" role="tablist" aria-label="Слайды">
+              {testimonials.map((t, i) => (
+                <button
+                  key={t.name}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === index}
+                  aria-label={`Перейти к отзыву ${i + 1}`}
+                  onClick={() => goTo(i)}
+                  className={cn(
+                    'h-2 rounded-full transition-all duration-300',
+                    i === index ? 'w-7 bg-cinnabar' : 'w-2 bg-ink/20 hover:bg-ink/35',
+                  )}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={next}
+              disabled={index === total - 1}
+              aria-label="Следующий отзыв"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 bg-porcelain text-ink-soft transition-colors hover:border-cinnabar/50 hover:text-cinnabar-deep disabled:cursor-not-allowed disabled:opacity-40 lg:hidden"
+            >
+              <ChevronRight className="h-5 w-5" strokeWidth={1.7} />
+            </button>
+          </div>
+        </Reveal>
       </div>
     </section>
   )

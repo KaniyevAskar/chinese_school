@@ -48,7 +48,7 @@ export function Results() {
         {/* Stats band */}
         <Reveal className="mt-14">
           <div className="relative overflow-hidden rounded-lg border border-ink/10 bg-ink text-porcelain">
-            <ScalePattern className="absolute inset-0 h-full w-full text-porcelain/8" />
+            <ScalePattern className="absolute inset-0 h-full w-full text-porcelain opacity-[0.08]" />
             <span className="pointer-events-none absolute -right-6 top-1/2 -translate-y-1/2 font-han text-[10rem] font-700 leading-none text-cinnabar/20">
               成
             </span>

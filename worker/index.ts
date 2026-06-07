@@ -1,16 +1,20 @@
 /**
  * Cloudflare Worker для Tomiris.
  *
- * Делает две вещи:
- * 1. На POST /api/enroll принимает заявку и шлёт её в Telegram.
- * 2. Все остальные запросы прокидывает в статические ассеты (Vite-сборка
- *    в `dist/`). SPA-fallback настроен в wrangler.jsonc.
+ * Делает три вещи:
+ * 1. Принимает POST /api/enroll и пересылает заявку в Telegram.
+ * 2. Редиректит www → apex (https://tomiris-chinese.kz).
+ * 3. Все остальные запросы прокидывает в статические ассеты (Vite-сборка
+ *    в `dist/`) с security- и cache-заголовками. SPA-fallback настроен в
+ *    wrangler.jsonc.
  *
  * Переменные окружения задаются в Cloudflare Dashboard
  * (Workers & Pages → проект → Settings → Variables and Secrets):
- *   TELEGRAM_BOT_TOKEN  — токен бота от @BotFather
- *   TELEGRAM_CHAT_ID    — ID чата, куда отправлять заявки
+ *   TELEGRAM_BOT_TOKEN  — Secret, токен бота от @BotFather
+ *   TELEGRAM_CHAT_ID    — Variable или Secret, ID чата для заявок
  */
+
+const CANONICAL_HOST = 'tomiris-chinese.kz'
 
 interface Env {
   TELEGRAM_BOT_TOKEN: string
@@ -30,7 +34,10 @@ interface EnrollPayload {
 const json = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+    },
   })
 
 const escapeHtml = (s: string) =>
@@ -39,24 +46,42 @@ const escapeHtml = (s: string) =>
 const sanitize = (value: unknown, max = 500): string =>
   typeof value === 'string' ? value.trim().slice(0, max) : ''
 
-async function handleEnrollGet(env: Env): Promise<Response> {
-  // ASSETS — стандартный биндинг для статики, его всегда есть. Остальное —
-  // переменные/секреты, заданные в wrangler.jsonc или дашборде CF.
-  const visibleBindings = Object.keys(env as unknown as Record<string, unknown>).filter(
-    (k) => k !== 'ASSETS',
-  )
+function withSecurityHeaders(response: Response, pathname: string): Response {
+  const headers = new Headers(response.headers)
+
+  headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
+  headers.set('X-Content-Type-Options', 'nosniff')
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()')
+  headers.set('X-Frame-Options', 'DENY')
+  headers.set('Cross-Origin-Opener-Policy', 'same-origin')
+
+  if (pathname.startsWith('/assets/')) {
+    headers.set('Cache-Control', 'public, max-age=31536000, immutable')
+  } else if (pathname === '/' || pathname.endsWith('.html')) {
+    headers.set('Cache-Control', 'public, max-age=0, must-revalidate')
+  } else if (pathname === '/sitemap.xml' || pathname === '/robots.txt') {
+    headers.set('Cache-Control', 'public, max-age=3600')
+  } else if (/\.(png|jpe?g|webp|svg|ico|gif|woff2?)$/i.test(pathname)) {
+    headers.set('Cache-Control', 'public, max-age=2592000')
+  }
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  })
+}
+
+function handleEnrollGet(env: Env): Response {
   return json({
     ok: true,
     route: '/api/enroll',
     method: 'GET',
     hint: 'Эта точка ждёт POST с JSON. GET-ответ означает, что Worker работает.',
-    env: {
+    config: {
       hasToken: Boolean(env.TELEGRAM_BOT_TOKEN),
       hasChatId: Boolean(env.TELEGRAM_CHAT_ID),
-      // Маркер из wrangler.jsonc — если виден, значит config-vars работают.
-      configMarker: (env as unknown as { CONFIG_MARKER?: string }).CONFIG_MARKER ?? null,
-      // Список всех ключей в env, кроме ASSETS — показывает реальные биндинги.
-      visibleBindings,
     },
   })
 }
@@ -143,6 +168,14 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
 
+    if (
+      url.hostname === `www.${CANONICAL_HOST}` ||
+      (url.hostname.endsWith(`.${CANONICAL_HOST}`) && url.hostname !== CANONICAL_HOST)
+    ) {
+      const target = `https://${CANONICAL_HOST}${url.pathname}${url.search}`
+      return Response.redirect(target, 301)
+    }
+
     if (url.pathname === '/api/enroll') {
       if (request.method === 'GET' || request.method === 'HEAD') {
         return handleEnrollGet(env)
@@ -153,7 +186,7 @@ export default {
       return json({ error: `Метод ${request.method} не поддерживается. Используйте POST.` }, 405)
     }
 
-    // Всё остальное — статика (с SPA-fallback из wrangler.jsonc)
-    return env.ASSETS.fetch(request)
+    const assetResponse = await env.ASSETS.fetch(request)
+    return withSecurityHeaders(assetResponse, url.pathname)
   },
 }
