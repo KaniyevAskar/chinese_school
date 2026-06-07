@@ -26,7 +26,7 @@ function App() {
         <Programs />
         <Process />
         <Teachers />
-        <Results />
+        {/*<Results />*/}
         <Testimonials />
         <Faq />
         <Enroll />

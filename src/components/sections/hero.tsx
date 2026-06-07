@@ -14,9 +14,9 @@ const fadeUp = {
 }
 
 const stats = [
-  { value: '1 200+', label: 'выпускников с сертификатом HSK' },
+  { value: '500+', label: 'выпускников с сертификатом HSK' },
   { value: '94%', label: 'сдают HSK с первой попытки' },
-  { value: '11 лет', label: 'преподаём китайский язык' },
+  { value: '6 лет', label: 'преподаём китайский язык' },
 ]
 
 export function Hero() {
@@ -88,7 +88,7 @@ export function Hero() {
           >
             <Button asChild size="lg">
               <a href="#enroll">
-                Бесплатный пробный урок
+                Записаться на пробный урок
                 <ArrowRight className="h-4 w-4" />
               </a>
             </Button>
@@ -144,7 +144,7 @@ export function Hero() {
             <div className="absolute bottom-5 left-5 flex items-center gap-2.5 rounded-md border border-gold/40 bg-porcelain/85 px-3.5 py-2 backdrop-blur-sm">
               <Sparkles className="h-4 w-4 text-gold-deep" />
               <span className="font-sans text-[0.8rem] font-600 text-ink">
-                Официальный центр подготовки к HSK 1–6
+                Онлайн-школа китайского языка
               </span>
             </div>
           </div>

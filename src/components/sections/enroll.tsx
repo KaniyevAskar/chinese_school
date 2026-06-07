@@ -80,7 +80,7 @@ export function Enroll() {
               <span className="eyebrow text-gold-soft before:bg-gold-soft">Запись на обучение</span>
               <h2 className="mt-6 font-display text-4xl font-600 leading-tight sm:text-5xl">
                 Первый шаг —<br />
-                <span className="text-gold-soft">бесплатный пробный урок</span>
+                <span className="text-gold-soft">Записаться на пробный урок</span>
               </h2>
               <p className="mt-5 max-w-md text-pretty leading-relaxed text-porcelain/75">
                 Оставьте заявку — методист свяжется в течение рабочего дня, определит ваш уровень и
