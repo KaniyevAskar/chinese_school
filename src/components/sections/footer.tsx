@@ -16,15 +16,16 @@ const cols = [
       { label: 'Зачем китайский', href: '#why' },
       { label: 'Как мы учим', href: '#process' },
       { label: 'Преподаватели', href: '#teachers' },
-      { label: 'Результаты', href: '#results' },
+      { label: 'Отзывы', href: '#testimonials' },
     ],
   },
   {
     title: 'Контакты',
     links: [
-      { label: '+7 (700) 318‑22‑09', href: 'tel:+77003182209' },
-      { label: 'hello@tomiris.school', href: 'mailto:hello@tomiris.school' },
-      { label: 'Алматы, пр. Достык 91', href: '#enroll' },
+      { label: '+7 702 366 4904', href: 'tel:+77023664904' },
+      { label: 'WhatsApp', href: 'https://wa.me/77023664904', external: true },
+      { label: 'Instagram', href: 'https://www.instagram.com/tomiris_chinese/', external: true },
+      { label: 'Facebook', href: 'https://www.facebook.com/121198601081163/', external: true },
       { label: 'Записаться', href: '#enroll' },
     ],
   },
@@ -55,13 +56,20 @@ export function Footer() {
             <nav key={c.title} aria-label={c.title}>
               <h3 className="font-sans text-xs font-700 uppercase tracking-widest text-ink-muted">{c.title}</h3>
               <ul className="mt-4 flex flex-col gap-2.5">
-                {c.links.map((l) => (
-                  <li key={l.label}>
-                    <a href={l.href} className="link-underline text-sm text-ink-soft transition-colors hover:text-cinnabar-deep">
-                      {l.label}
-                    </a>
-                  </li>
-                ))}
+                {c.links.map((l) => {
+                  const isExternal = 'external' in l && l.external
+                  return (
+                    <li key={l.label}>
+                      <a
+                        href={l.href}
+                        className="link-underline text-sm text-ink-soft transition-colors hover:text-cinnabar-deep"
+                        {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                      >
+                        {l.label}
+                      </a>
+                    </li>
+                  )
+                })}
               </ul>
             </nav>
           ))}

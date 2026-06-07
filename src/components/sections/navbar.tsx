@@ -9,7 +9,7 @@ const links = [
   { href: '#programs', label: 'Программы' },
   { href: '#process', label: 'Как учим' },
   { href: '#teachers', label: 'Преподаватели' },
-  { href: '#results', label: 'Результаты' },
+  { href: '#testimonials', label: 'Отзывы' },
   { href: '#faq', label: 'Вопросы' },
 ]
 

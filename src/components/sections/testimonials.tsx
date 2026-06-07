@@ -7,7 +7,7 @@ const testimonials = [
   {
     name: 'Алина',
     role: 'Студентка, уровень HSK 4',
-    initials: 'АЖ',
+    initials: 'А',
     text: '下午好老师👋\
     我学习中文已经一年了.\
     Мне очень понравились наши занятия, и вы просто замечательный преподаватель.\
@@ -17,7 +17,7 @@ const testimonials = [
   {
     name: 'Сабина',
     role: 'Студентка, уровень HSK 3',
-    initials: 'РЕ',
+    initials: 'С',
     text: '您好Tomiris 老师！\
     Сегодня ровно 2 года, как я изучаю китайский язык с Вами!\
     Прекрасные 2 года интересных, разнообразных занятий🥹\
@@ -31,7 +31,7 @@ const testimonials = [
   {
     name: 'Дана',
     role: 'Школьница, уровень HSK 5',
-    initials: '',
+    initials: 'Д',
     text: '老师 多谢你！Урок очень понравился！\
     Всё объяснялось просто и понятно, даже сложные моменты разобрали без напряжения.\
     Было много практики, поэтому время пролетело незаметно.\
@@ -42,7 +42,7 @@ const testimonials = [
   {
     name: 'Таисия',
     role: 'Студентка, уровень HSK 4',
-    initials: '',
+    initials: 'Т',
     text: '您好Tomiris老师👋\
     Спасибо большое за Ваш труд и терпение! За знание, которое Вы мне даете🥹 С Вами всегда весело и приятно заниматься \
     谢谢 за все! Я настроена. \
@@ -51,7 +51,7 @@ const testimonials = [
   {
     name: 'Анастасия',
     role: 'Предприниматель',
-    initials: '',
+    initials: 'А',
     text: '你好，老师！\
     Мне очень нравится с Вами заниматься китайским языком. Вы доходчиво объясняете и выполняете свою работу безупречно. Буду советовать Вас людям, которые так же хотели бы изучать китайский язык. \
     Я рада, что встретила Вас и именно Вы мой учитель. \
@@ -61,7 +61,7 @@ const testimonials = [
 
 export function Testimonials() {
   return (
-    <section className="relative bg-porcelain-deep py-24 sm:py-28">
+    <section id="testimonials" className="relative bg-porcelain-deep py-24 sm:py-28">
       <div className="container-px">
         <SectionHeading
           align="center"
