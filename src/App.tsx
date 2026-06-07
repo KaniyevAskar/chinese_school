@@ -4,7 +4,7 @@ import { WhyChinese } from '@/components/sections/why-chinese'
 import { Programs } from '@/components/sections/programs'
 import { Process } from '@/components/sections/process'
 import { Teachers } from '@/components/sections/teachers'
-import { Results } from '@/components/sections/results'
+{/*import { Results } from '@/components/sections/results'*/}
 import { Testimonials } from '@/components/sections/testimonials'
 import { Faq } from '@/components/sections/faq'
 import { Enroll } from '@/components/sections/enroll'
