@@ -1,6 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Quote, Star } from 'lucide-react'
-import { motion, useReducedMotion, type PanInfo } from 'framer-motion'
+import {
+  animate,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  type PanInfo,
+} from 'framer-motion'
 import { SectionHeading } from '@/components/ui/section-heading'
 import { Reveal } from '@/components/ui/reveal'
 import { cn } from '@/lib/utils'
@@ -63,11 +69,38 @@ const testimonials = [
 
 const total = testimonials.length
 
+const SPRING = { type: 'spring' as const, stiffness: 320, damping: 36, mass: 0.9 }
+
 export function Testimonials() {
   const [index, setIndex] = useState(0)
   const reduce = useReducedMotion()
 
-  const goTo = (i: number) => setIndex(((i % total) + total) % total)
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const x = useMotionValue(0)
+  const [viewportWidth, setViewportWidth] = useState(0)
+
+  useLayoutEffect(() => {
+    const el = viewportRef.current
+    if (!el) return
+    const update = () => setViewportWidth(el.offsetWidth)
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const target = -index * viewportWidth
+    if (reduce || viewportWidth === 0) {
+      x.set(target)
+      return
+    }
+    const controls = animate(x, target, SPRING)
+    return controls.stop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, viewportWidth, reduce])
+
+  const goTo = (i: number) => setIndex(Math.max(0, Math.min(total - 1, i)))
   const prev = () => goTo(index - 1)
   const next = () => goTo(index + 1)
 
@@ -82,9 +115,16 @@ export function Testimonials() {
   }, [index])
 
   const onDragEnd = (_: unknown, info: PanInfo) => {
-    const threshold = 60
-    if (info.offset.x < -threshold) next()
-    else if (info.offset.x > threshold) prev()
+    const projection = info.offset.x + info.velocity.x * 0.18
+    const threshold = Math.max(viewportWidth * 0.2, 48)
+
+    if (projection < -threshold && index < total - 1) {
+      goTo(index + 1)
+    } else if (projection > threshold && index > 0) {
+      goTo(index - 1)
+    } else {
+      animate(x, -index * viewportWidth, SPRING)
+    }
   }
 
   return (
@@ -104,26 +144,29 @@ export function Testimonials() {
             aria-roledescription="Карусель отзывов"
             aria-label="Отзывы студентов"
           >
-            <div className="overflow-hidden rounded-lg">
+            <div ref={viewportRef} className="overflow-hidden rounded-lg border border-ink/10 bg-white shadow-soft">
               <motion.div
-                className="flex touch-pan-y"
-                animate={{ x: `-${index * 100}%` }}
-                transition={{ duration: reduce ? 0 : 0.55, ease: [0.22, 1, 0.36, 1] }}
-                drag={reduce ? false : 'x'}
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.18}
+                className="flex touch-pan-y will-change-transform"
+                style={{ x }}
+                drag="x"
+                dragConstraints={{
+                  left: -((total - 1) * viewportWidth),
+                  right: 0,
+                }}
+                dragElastic={0.12}
+                dragMomentum={false}
                 onDragEnd={onDragEnd}
               >
                 {testimonials.map((t, i) => (
                   <figure
                     key={t.name}
-                    className="flex w-full shrink-0 flex-col rounded-lg border border-ink/10 bg-white/80 p-8 sm:p-10 shadow-soft"
+                    className="flex w-full shrink-0 flex-col bg-white p-7 sm:p-10"
                     aria-roledescription="slide"
                     aria-label={`${i + 1} из ${total}`}
                     aria-hidden={i !== index}
                   >
                     <Quote className="h-9 w-9 text-cinnabar/30" strokeWidth={1.5} />
-                    <blockquote className="mt-5 flex-1 text-pretty text-[1.02rem] leading-relaxed text-ink-soft sm:text-[1.06rem]">
+                    <blockquote className="mt-5 flex-1 text-pretty text-[1rem] leading-relaxed text-ink-soft sm:text-[1.06rem]">
                       {t.text}
                     </blockquote>
                     <div className="mt-7 flex items-center gap-1 text-gold-deep" aria-label="Оценка 5 из 5">
@@ -145,39 +188,65 @@ export function Testimonials() {
               </motion.div>
             </div>
 
+            {/* Side arrows — only on lg+ where there's safe room outside the slide */}
             <button
               type="button"
               onClick={prev}
+              disabled={index === 0}
               aria-label="Предыдущий отзыв"
-              className="absolute left-1 top-1/2 flex h-11 w-11 -translate-x-full -translate-y-1/2 items-center justify-center rounded-full border border-ink/15 bg-porcelain text-ink-soft shadow-soft transition-colors hover:border-cinnabar/50 hover:text-cinnabar-deep sm:left-0 sm:-translate-x-[125%]"
+              className="absolute -left-16 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-ink/15 bg-porcelain text-ink-soft shadow-soft transition-colors hover:border-cinnabar/50 hover:text-cinnabar-deep disabled:cursor-not-allowed disabled:opacity-40 lg:flex"
             >
               <ChevronLeft className="h-5 w-5" strokeWidth={1.7} />
             </button>
             <button
               type="button"
               onClick={next}
+              disabled={index === total - 1}
               aria-label="Следующий отзыв"
-              className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 translate-x-full items-center justify-center rounded-full border border-ink/15 bg-porcelain text-ink-soft shadow-soft transition-colors hover:border-cinnabar/50 hover:text-cinnabar-deep sm:right-0 sm:translate-x-[125%]"
+              className="absolute -right-16 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-ink/15 bg-porcelain text-ink-soft shadow-soft transition-colors hover:border-cinnabar/50 hover:text-cinnabar-deep disabled:cursor-not-allowed disabled:opacity-40 lg:flex"
             >
               <ChevronRight className="h-5 w-5" strokeWidth={1.7} />
             </button>
           </div>
 
-          <div className="mt-8 flex items-center justify-center gap-2.5" role="tablist" aria-label="Слайды">
-            {testimonials.map((t, i) => (
-              <button
-                key={t.name}
-                type="button"
-                role="tab"
-                aria-selected={i === index}
-                aria-label={`Перейти к отзыву ${i + 1}`}
-                onClick={() => goTo(i)}
-                className={cn(
-                  'h-2 rounded-full transition-all duration-300',
-                  i === index ? 'w-7 bg-cinnabar' : 'w-2 bg-ink/20 hover:bg-ink/35',
-                )}
-              />
-            ))}
+          {/* Controls row: arrows on mobile/tablet + dot indicators */}
+          <div className="mt-7 flex items-center justify-center gap-3 sm:mt-8 sm:gap-4">
+            <button
+              type="button"
+              onClick={prev}
+              disabled={index === 0}
+              aria-label="Предыдущий отзыв"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 bg-porcelain text-ink-soft transition-colors hover:border-cinnabar/50 hover:text-cinnabar-deep disabled:cursor-not-allowed disabled:opacity-40 lg:hidden"
+            >
+              <ChevronLeft className="h-5 w-5" strokeWidth={1.7} />
+            </button>
+
+            <div className="flex items-center gap-2.5" role="tablist" aria-label="Слайды">
+              {testimonials.map((t, i) => (
+                <button
+                  key={t.name}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === index}
+                  aria-label={`Перейти к отзыву ${i + 1}`}
+                  onClick={() => goTo(i)}
+                  className={cn(
+                    'h-2 rounded-full transition-all duration-300',
+                    i === index ? 'w-7 bg-cinnabar' : 'w-2 bg-ink/20 hover:bg-ink/35',
+                  )}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={next}
+              disabled={index === total - 1}
+              aria-label="Следующий отзыв"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 bg-porcelain text-ink-soft transition-colors hover:border-cinnabar/50 hover:text-cinnabar-deep disabled:cursor-not-allowed disabled:opacity-40 lg:hidden"
+            >
+              <ChevronRight className="h-5 w-5" strokeWidth={1.7} />
+            </button>
           </div>
         </Reveal>
       </div>

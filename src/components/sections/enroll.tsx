@@ -108,13 +108,13 @@ export function Enroll() {
   return (
     <section id="enroll" className="relative overflow-hidden py-24 sm:py-28">
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <ScalePattern className="absolute -left-10 bottom-0 h-80 w-80 text-cinnabar/12" />
+        <ScalePattern className="absolute -left-10 bottom-0 h-80 w-80 text-cinnabar opacity-[0.12]" />
       </div>
       <div className="container-px">
         <div className="grid overflow-hidden rounded-lg border border-ink/12 shadow-lift lg:grid-cols-2">
           {/* Info side */}
           <div className="relative flex flex-col justify-between bg-ink p-9 text-porcelain sm:p-12">
-            <ScalePattern className="absolute inset-0 h-full w-full text-porcelain/6" />
+            <ScalePattern className="absolute inset-0 hidden h-full w-full text-porcelain opacity-[0.07] sm:block" />
             <div className="relative">
               <span className="eyebrow text-gold-soft before:bg-gold-soft">Запись на обучение</span>
               <h2 className="mt-6 font-display text-4xl font-600 leading-tight sm:text-5xl">
